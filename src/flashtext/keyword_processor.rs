@@ -1,7 +1,11 @@
 #![allow(dead_code)]
+
 use crate::trie::*;
 
-use std::collections::HashSet;
+use std::{
+    collections::{HashMap, HashSet},
+    result,
+};
 
 #[derive(Debug)]
 pub struct KeywordProcessor {
@@ -67,5 +71,47 @@ impl KeywordProcessor {
                 },
             })
             .collect();
+    }
+
+    pub fn replace(&self, text: &str, repl: &HashMap<&str, &str>, default: Option<&str>) -> String {
+        let spans = self.extract(text);
+        let mut result = String::new();
+        let mut last_end = 0;
+        let indices: Vec<usize> = text.char_indices().map(|(i, _)| i).collect();
+
+        for span in spans {
+            let start = indices[span.start];
+            let end = if span.end < indices.len() {
+                indices[span.end]
+            } else {
+                text.len()
+            };
+            if last_end < start {
+                result.push_str(&text[last_end..start]);
+            }
+            let orginal = &text[start..end];
+
+            let replacement = match span.value {
+                Some(v) => {
+                    let key = v.as_str();
+                    match repl.get(key) {
+                        Some(value) => value,
+                        None => match default {
+                            Some(value) => value,
+                            None => orginal,
+                        },
+                    }
+                }
+                None => orginal,
+            };
+            result.push_str(replacement);
+            last_end = end;
+        }
+
+        if last_end < text.len() {
+            result.push_str(&text[last_end..]);
+        }
+
+        return result;
     }
 }
