@@ -1,20 +1,29 @@
+#![allow(dead_code)]
+
 use pyo3::prelude::*;
-use pyo3::types::*;
 
 mod trie;
 mod flashtext;
 
-use trie::Span;
+#[pyclass]
+struct Span {
+    #[pyo3(get)]
+    start: usize,
 
-impl IntoPy<PyObject> for Span<usize, String> {
-    fn into_py(self, py: Python) -> PyObject {
-        let span = PyDict::new(py);
-        span.set_item("start", self.start).unwrap();
-        span.set_item("end", self.end).unwrap();
-        span.set_item("value", self.value).unwrap();
-        span.into()
+    #[pyo3(get)]
+    end: usize,
+
+    #[pyo3(get)]
+    value: String,
+}
+
+#[pymethods]
+impl Span {
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(format!("Span(start={}, end={}, value=\"{}\")", self.start, self.end, self.value))
     }
 }
+
 
 #[pyclass]
 struct KeywordProcessor {
@@ -59,8 +68,16 @@ impl KeywordProcessor {
         self.core.pop(keyword);
     }
 
-    fn extract(&self, text: &str) -> Vec<Span<usize, String>> {
-        self.core.extract(text)
+    fn extract(&self, text: &str) -> Vec<Span> {
+        let spans = self.core.extract(text);
+        spans.iter().map(|t| Span {
+            start: t.start,
+            end: t.end,
+            value: match &t.value {
+                Some(v) => v.chars().collect(),
+                None => "".to_string(),
+            },
+        }).collect()
     }
 }
 
