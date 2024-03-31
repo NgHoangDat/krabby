@@ -251,4 +251,23 @@ impl<K: PartialEq + Eq + Copy + Hash + Display, V: Eq + Copy + Display> Trie<K, 
 
         return spans;
     }
+
+    pub fn has(&self, key: &Vec<K>, target: V) -> bool {
+        if key.len() == 0 {
+            return false;
+        }
+
+        let mut node = &self.root;
+        for curr in key.iter() {
+            if !node.next.contains_key(curr) {
+                return false;
+            }
+
+            let child_id = node.next.get(curr).unwrap();
+            let child = self.nodes.get(child_id).unwrap();
+            node = child;
+        }
+
+        return node.equal(target);
+    }
 }

@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use pyo3::{prelude::*, types::PyDict};
 
-mod trie;
 mod flashtext;
+mod trie;
 
 #[pyclass]
 struct Span {
@@ -57,6 +57,11 @@ impl KeywordProcessor {
         }
     }
 
+    #[getter]
+    fn keywords(&self) -> Vec<String> {
+        self.core.get_keywords()
+    }
+
     fn set_boundary(&mut self, boundary: &str) {
         self.core.boundary = match boundary {
             "" => None,
@@ -91,7 +96,10 @@ impl KeywordProcessor {
     #[new]
     fn new(case_sensitive: bool) -> Self {
         KeywordProcessor {
-            core: flashtext::KeywordProcessor::new(case_sensitive, " \t\n\r,.;:!?"),
+            core: flashtext::KeywordProcessor::new(
+                case_sensitive,
+                " \t\n\r,.;:!?{}[]()<>+-*/=|\\\"'`~@#$%^&*",
+            ),
         }
     }
 
@@ -120,6 +128,10 @@ impl KeywordProcessor {
 
     fn replace(&self, text: &str, repl: HashMap<&str, &str>, default: Option<&str>) -> String {
         self.core.replace(text, &repl, default)
+    }
+
+    fn has(&self, keyword: &str) -> bool {
+        self.core.has(keyword)
     }
 }
 

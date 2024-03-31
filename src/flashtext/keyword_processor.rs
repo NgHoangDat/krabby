@@ -4,12 +4,14 @@ use crate::trie::*;
 
 use std::{
     collections::{HashMap, HashSet},
+    hash::Hash,
     result,
 };
 
 #[derive(Debug)]
 pub struct KeywordProcessor {
     trie: Trie<char, bool>,
+    keywords: HashMap<String, String>,
 
     pub case_sensitive: bool,
 
@@ -20,6 +22,7 @@ impl KeywordProcessor {
     pub fn new(case_sensitive: bool, boundary: &str) -> Self {
         KeywordProcessor {
             trie: Trie::new(),
+            keywords: HashMap::new(),
             case_sensitive: case_sensitive,
             boundary: match boundary {
                 "" => None,
@@ -29,10 +32,17 @@ impl KeywordProcessor {
     }
 
     pub fn put(&mut self, keyword: &str) {
-        let mut key = keyword.chars().collect::<Vec<char>>();
+        let mut key: Vec<char> = keyword.chars().collect();
         if !self.case_sensitive {
             key = key.iter().map(|c| c.to_ascii_lowercase()).collect();
         }
+
+        let key_str: String = key.iter().collect();
+        if self.keywords.contains_key(&key_str) {
+            return;
+        }
+
+        self.keywords.insert(key_str, keyword.to_string());
         self.trie.put(&key, true);
     }
 
@@ -41,7 +51,18 @@ impl KeywordProcessor {
         if !self.case_sensitive {
             key = key.iter().map(|c| c.to_ascii_lowercase()).collect();
         }
+
+        let key_str: String = key.iter().collect();
+        if !self.keywords.contains_key(&key_str) {
+            return;
+        }
+
+        self.keywords.remove(&key_str);
         self.trie.pop(&key, true);
+    }
+
+    pub fn get_keywords(&self) -> Vec<String> {
+        self.keywords.values().map(|v| v.clone()).collect()
     }
 
     pub fn extract(&self, text: &str) -> Vec<Span<usize, String>> {
@@ -113,5 +134,14 @@ impl KeywordProcessor {
         }
 
         return result;
+    }
+
+    pub fn has(&self, keyword: &str) -> bool {
+        let mut target: Vec<char> = keyword.chars().collect();
+        if !self.case_sensitive {
+            target = target.iter().map(|c| c.to_ascii_lowercase()).collect();
+        }
+        let target: String = target.iter().collect();
+        self.keywords.contains_key(&target)
     }
 }
