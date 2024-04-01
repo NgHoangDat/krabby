@@ -2,11 +2,8 @@
 
 use crate::trie::*;
 
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hash,
-    result,
-};
+use std::collections::{HashMap, HashSet};
+use std::{hash::Hash, result};
 
 #[derive(Debug)]
 pub struct KeywordProcessor {
@@ -31,34 +28,33 @@ impl KeywordProcessor {
         }
     }
 
-    pub fn put(&mut self, keyword: &str) {
-        let mut key: Vec<char> = keyword.chars().collect();
-        if !self.case_sensitive {
-            key = key.iter().map(|c| c.to_ascii_lowercase()).collect();
+    fn normalize(&self, keyword: &str) -> String {
+        if self.case_sensitive {
+            return keyword.to_string();
         }
+        return keyword.to_lowercase();
+    }
 
-        let key_str: String = key.iter().collect();
-        if self.keywords.contains_key(&key_str) {
+    pub fn put(&mut self, keyword: &str) {
+        let key = self.normalize(keyword);
+
+        if self.keywords.contains_key(&key) {
             return;
         }
 
-        self.keywords.insert(key_str, keyword.to_string());
-        self.trie.put(&key, true);
+        self.trie.put(&key.chars().collect(), true);
+        self.keywords.insert(key, keyword.to_string());
     }
 
     pub fn pop(&mut self, keyword: &str) {
-        let mut key = keyword.chars().collect::<Vec<char>>();
-        if !self.case_sensitive {
-            key = key.iter().map(|c| c.to_ascii_lowercase()).collect();
-        }
+        let key = self.normalize(keyword);
 
-        let key_str: String = key.iter().collect();
-        if !self.keywords.contains_key(&key_str) {
+        if !self.keywords.contains_key(&key) {
             return;
         }
 
-        self.keywords.remove(&key_str);
-        self.trie.pop(&key, true);
+        self.keywords.remove(&key);
+        self.trie.pop(&key.chars().collect(), true);
     }
 
     pub fn get_keywords(&self) -> Vec<String> {
@@ -67,10 +63,7 @@ impl KeywordProcessor {
 
     pub fn extract(&self, text: &str) -> Vec<Span<usize, String>> {
         let spans: Vec<Span<usize, Vec<char>>>;
-        let mut target = text.chars().collect::<Vec<char>>();
-        if !self.case_sensitive {
-            target = target.iter().map(|c| c.to_ascii_lowercase()).collect();
-        }
+        let target: Vec<char> = self.normalize(text).chars().collect();
 
         match self.boundary {
             Some(ref b) => {
@@ -95,6 +88,15 @@ impl KeywordProcessor {
     }
 
     pub fn replace(&self, text: &str, repl: &HashMap<&str, &str>, default: Option<&str>) -> String {
+        let repl: HashMap<String, String> = {
+            let mut r = HashMap::new();
+            for (k, v) in repl.iter() {
+                let k: String = self.normalize(k);
+                r.insert(k, v.to_string());
+            }
+            r
+        };
+
         let spans = self.extract(text);
         let mut result = String::new();
         let mut last_end = 0;
@@ -114,9 +116,9 @@ impl KeywordProcessor {
 
             let replacement = match span.value {
                 Some(v) => {
-                    let key = v.as_str();
-                    match repl.get(key) {
-                        Some(value) => value,
+                    // let key = v.as_str();
+                    match repl.get(&v) {
+                        Some(value) => value.as_str(),
                         None => match default {
                             Some(value) => value,
                             None => orginal,
@@ -137,11 +139,7 @@ impl KeywordProcessor {
     }
 
     pub fn has(&self, keyword: &str) -> bool {
-        let mut target: Vec<char> = keyword.chars().collect();
-        if !self.case_sensitive {
-            target = target.iter().map(|c| c.to_ascii_lowercase()).collect();
-        }
-        let target: String = target.iter().collect();
+        let target: String = self.normalize(keyword);
         self.keywords.contains_key(&target)
     }
 }
