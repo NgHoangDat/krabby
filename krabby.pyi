@@ -1,6 +1,9 @@
 from typing import Any
 
 
+def md5sum(file: str) -> str:
+    ...
+
 class Span:
     def dict(self) -> dict[str, Any]:
         ...

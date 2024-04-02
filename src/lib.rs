@@ -6,6 +6,7 @@ use pyo3::{prelude::*, types::PyDict};
 
 mod flashtext;
 mod trie;
+mod hash;
 
 #[pyclass]
 struct Span {
@@ -17,6 +18,11 @@ struct Span {
 
     #[pyo3(get)]
     value: String,
+}
+
+#[pyfunction]
+fn md5sum(path: &str) -> String {
+    hash::md5sum(path)
 }
 
 #[pymethods]
@@ -138,6 +144,8 @@ impl KeywordProcessor {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn krabby(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Span>()?;
     m.add_class::<KeywordProcessor>()?;
+    m.add_function(wrap_pyfunction!(md5sum, m)?)?;
     Ok(())
 }
