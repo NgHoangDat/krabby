@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def md5sum(file: str) -> str:
+def md5sum(file: str, batch_size: int) -> str:
     ...
 
 class Span:

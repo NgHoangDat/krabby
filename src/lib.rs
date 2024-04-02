@@ -21,8 +21,8 @@ struct Span {
 }
 
 #[pyfunction]
-fn md5sum(path: &str) -> String {
-    hash::md5sum(path)
+fn md5sum(path: &str, batch_size: usize) -> String {
+    hash::md5sum(path, batch_size)
 }
 
 #[pymethods]

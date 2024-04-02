@@ -4,7 +4,7 @@ use std::io::Read;
 use std::path::Path;
 use md5::{Md5, Digest};
 
-pub fn md5sum(path: &str) -> String {
+pub fn md5sum(path: &str, batch_size: usize) -> String {
     let mut files: Vec<String> = Vec::new();
     let mut dirs: Vec<String> = Vec::new();
 
@@ -60,7 +60,7 @@ pub fn md5sum(path: &str) -> String {
         };
 
         loop {
-            let mut buf = [0; 1024];
+            let mut buf = vec![0; batch_size];
             let n = match file.read(&mut buf) {
                 Ok(n) => n,
                 Err(_) => break,
