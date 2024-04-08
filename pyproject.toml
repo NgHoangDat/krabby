@@ -13,5 +13,14 @@ classifiers = [
 dynamic = ["version"]
 description = "A Flashtext library for Python by Rust"
 
+dependencies = [
+  'typer',
+]
+
+[project.scripts]
+krabby = "krabby.__main__:main"
+
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
+

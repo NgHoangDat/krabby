@@ -51,8 +51,16 @@ pub fn md5sum(path: &str, batch_size: usize) -> String {
     let mut md5 = Md5::new();
     
     for file in &files {
-        let filename = Path::new(file).file_name().unwrap().to_str().unwrap();
-        md5.update(filename.as_bytes());
+        //Get relative path if path is a directory
+        let relative_path = if Path::new(path).is_dir() {
+            let file_path = Path::new(file);
+            let relative_path = file_path.strip_prefix(path).unwrap();
+            relative_path.to_str().unwrap()
+        } else {
+            Path::new(file).file_name().unwrap().to_str().unwrap()
+        };
+
+        md5.update(relative_path.as_bytes());
 
         let mut file = match std::fs::File::open(file) {
             Ok(file) => file,
