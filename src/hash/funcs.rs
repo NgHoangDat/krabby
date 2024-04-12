@@ -44,32 +44,27 @@ pub fn md5sum(path: &str, batch_size: usize) -> String {
         }
     }
 
-    // Sort files
-    files.sort();
-
-    // Initialize hash data
-    let mut md5 = Md5::new();
-    
+    let mut hashes: Vec<String> = Vec::new();
     for file in &files {
         //Get relative path if path is a directory
         let relative_path = if Path::new(path).is_dir() {
             let file_path = Path::new(file);
             let relative_path = file_path.strip_prefix(path).unwrap();
-            relative_path.to_str().unwrap()
+            let relative_path = relative_path.to_str().unwrap();
+            // add ./ to relative path
+            format!("./{}", relative_path)
         } else {
-            Path::new(file).file_name().unwrap().to_str().unwrap()
+            Path::new(file).file_name().unwrap().to_str().unwrap().to_string()
         };
-
-        md5.update(relative_path.as_bytes());
-
-        let mut file = match std::fs::File::open(file) {
-            Ok(file) => file,
+        let mut md5 = Md5::new();
+        let mut fin = match std::fs::File::open(file) {
+            Ok(fin) => fin,
             Err(_) => continue,
         };
 
         loop {
             let mut buf = vec![0; batch_size];
-            let n = match file.read(&mut buf) {
+            let n = match fin.read(&mut buf) {
                 Ok(n) => n,
                 Err(_) => break,
             };
@@ -80,7 +75,21 @@ pub fn md5sum(path: &str, batch_size: usize) -> String {
 
             md5.update(&buf[..n]);
         }
+
+        let hash_value = format!("{:x} {}", md5.finalize(), relative_path);
+        hashes.push(hash_value);
     }
 
+    hashes.sort();
+
+    // Concatenate all hashes with newline
+    let mut hash_value = hashes.join("\n");
+
+    // Add a newline at the end
+    hash_value += "\n";
+
+    // Hash the concatenated hashes
+    let mut md5 = Md5::new();
+    md5.update(hash_value.as_bytes());
     format!("{:x}", md5.finalize())
 }
