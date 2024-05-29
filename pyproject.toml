@@ -12,6 +12,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 description = "A Flashtext library for Python by Rust"
+license = { file = "LICENSE" }
 
 dependencies = [
   'typer',
